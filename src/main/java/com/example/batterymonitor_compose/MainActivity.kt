@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.example.batterymonitor_compose.ui.theme.BatteryMonitor_ComposeTheme
 
+const val CUSTOM_ACTION_BATTERY = "com.example.batterymonitor_compose.ACTUALIZAR_BATERIA"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
