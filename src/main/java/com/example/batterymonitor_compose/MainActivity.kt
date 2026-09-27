@@ -23,6 +23,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.example.batterymonitor_compose.ui.theme.BatteryMonitor_ComposeTheme
+import android.app.PendingIntent
+import android.os.Build
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 const val CUSTOM_ACTION_BATTERY = "com.example.batterymonitor_compose.ACTUALIZAR_BATERIA"
 class MainActivity : ComponentActivity() {
@@ -41,7 +51,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BatteryScreen(modifier: Modifier = Modifier) {
+
     var porcentaje by remember { mutableStateOf(0) }
+
     val context = LocalContext.current
 
     DisposableEffect(Unit) {
@@ -55,16 +67,71 @@ fun BatteryScreen(modifier: Modifier = Modifier) {
             }
         }
         context.registerReceiver(receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        Log.d("BatteryScreen", "Receiver registrado")
+        Log.d("BatteryScreen", "Receiver automático registrado")
 
         onDispose {
             context.unregisterReceiver(receiver)
-            Log.d("BatteryScreen", "Receiver desregistrado")
+            Log.d("BatteryScreen", "Receiver automático desregistrado")
         }
     }
 
-    Text(
-        text = "Batería: $porcentaje%",
-        modifier = modifier
-    )
+    DisposableEffect(Unit) {
+        val manualReceiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                if (intent?.action == CUSTOM_ACTION_BATTERY) {
+                    val batteryManager =
+                        ctx?.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+                    val nivel =
+                        batteryManager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                            ?: -1
+                    if (nivel != -1) {
+                        porcentaje = nivel
+                        Log.d("BatteryScreen", "Actualización manual recibida: $nivel%")
+                    }
+                }
+            }
+        }
+
+        val filter = IntentFilter(CUSTOM_ACTION_BATTERY)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(manualReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            context.registerReceiver(manualReceiver, filter)
+        }
+        Log.d("BatteryScreen", "Receiver manual registrado")
+
+        onDispose {
+            context.unregisterReceiver(manualReceiver)
+            Log.d("BatteryScreen", "Receiver manual desregistrado")
+        }
+    }
+
+    Column(
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Batería: $porcentaje%",
+            fontSize = 32.sp
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(onClick = {
+            val intent = Intent(CUSTOM_ACTION_BATTERY).apply {
+                setPackage(context.packageName)
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            pendingIntent.send()
+            Log.d("BatteryScreen", "PendingIntent enviado manualmente")
+        }) {
+            Text(text = "Actualizar manualmente")
+        }
+    }
 }
