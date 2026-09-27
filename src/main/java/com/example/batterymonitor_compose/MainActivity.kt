@@ -22,7 +22,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.batterymonitor_compose.ui.theme.BatteryMonitor_ComposeTheme
 
 class MainActivity : ComponentActivity() {
@@ -32,10 +31,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             BatteryMonitor_ComposeTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    BatteryScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -43,16 +39,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(text = "Hello $name!", modifier = modifier)
-}
-
-@Composable
 fun BatteryScreen(modifier: Modifier = Modifier) {
-
-    // Paso 2: Variable de estado para el porcentaje de batería
     var porcentaje by remember { mutableStateOf(0) }
-
     val context = LocalContext.current
 
     DisposableEffect(Unit) {
@@ -65,7 +53,6 @@ fun BatteryScreen(modifier: Modifier = Modifier) {
                 }
             }
         }
-
         context.registerReceiver(receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         Log.d("BatteryScreen", "Receiver registrado")
 
@@ -79,12 +66,4 @@ fun BatteryScreen(modifier: Modifier = Modifier) {
         text = "Batería: $porcentaje%",
         modifier = modifier
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    BatteryMonitor_ComposeTheme {
-        Greeting("Android")
-    }
 }
